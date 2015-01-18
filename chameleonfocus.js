@@ -40,7 +40,7 @@ function currentFocusToText(focusNum){
 function findAttribute(name){
     var attrs = findObjs({
                 _type: "attribute",
-		        _name: name,
+    	        _name: name,
                 _characterid: ChameleonChar.id
 	});
     
@@ -79,6 +79,7 @@ function clearOldFocus(status){
         log("Deactivating "+ currentFocusToText(status));
         setAttrByName(bonusToAttackAttr, defaultbonus);
         setAttrByName(bonusToDamageAttr, defaultbonus);
+		setAttrByName(fortBonusAttr, defaultbonus);
     }
     if(status == 2){
         log("Deactivating "+ currentFocusToText(status));
@@ -106,6 +107,7 @@ function setNewFocus(status){
         log("Activating "+currentFocusToText(status));
         setAttrByName(bonusToAttackAttr, getChameleonBonus());
         setAttrByName(bonusToDamageAttr, getChameleonBonus());
+		setAttrByName(fortBonusAttr, getChameleonBonus());
     }
     if(status == 2){
         log("Activating "+currentFocusToText(status));
@@ -153,17 +155,27 @@ function listBonuses(focus){
 
 //Helper: gets the current lists of Controlled by of PC
 function getCurrentControllers(){
-    return ChameleonChar.get("controlledby").split(',');
+    //log("getCurrentControllers called");
+    var controllerList =  ChameleonChar.get("controlledby").split(',');
+	for(i=0; i<controllerList.length;i++){
+	    log("Controller: "+controllerList[i]);
+	}
+	return controllerList;
 }
 
 //Checks if command was sent by Player who can control this PC
-function cmdSentByController(playerid){
+function cmdSentByController(playername){
     arrayofControllers = getCurrentControllers();
     var sentByPlayerController = false;
-    for(i=0;i<arrayofControllers;i++){
-        if(playerid==i){
-            var sentByPlayerController = true;
-        }
+	//log("cmdSentbyControler called, playername: "+playername);
+    
+    
+    for(i=0;i<arrayofControllers.length;i++){
+        var playerObj = getObj("player", arrayofControllers[i]);
+        if(playerObj != undefined && playerObj.get("_displayname")==playername){
+            sentByPlayerController = true;
+        }        
+        
     }
     return sentByPlayerController;
 }
@@ -245,10 +257,18 @@ function initCharSheet(character){
 
 //Chat Command Console
 on("chat:message", function(msg){
+    //log("MSG sent by: "+msg.playerid);
+    //log("MSG type: "+msg.type);
+    //log("MSG who: "+msg.who);
     
+    if(msg.type!="api"){
+        //log("MSG not API");
+        return;
+    }
     
-    if(cmdSentByController(msg.playerid)=="false"){
-        sendChat("System", "You are not in Control of this Character!");
+    if(cmdSentByController(msg.who)==false){
+        //sendChat("System", "You are not in Control of this Character!");
+        //log("Command sent by someone not authorized.");
         return;
     }
     
